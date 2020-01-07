@@ -1,6 +1,17 @@
 import os
 import cgi
 import urllib
+import socket
+import struct
+
+def play_song(songname):
+    sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM, 0)
+    sock.connect(("0.0.0.0", 44))
+    sock.send(struct.pack("B", 0) + songname.encode("utf-8"))
+    size = struct.unpack("L", sock.recv(4))
+    print(size)
+    sock.close()
+    return size
 
 def mime(path):
     if path.endswith(".js"): return "text/javascript"
@@ -22,7 +33,8 @@ def application(env, start_response):
             return [get_listing().encode("utf-8")]
         if uri == "/playsong":
             contentlen = int("0" + env.get("CONTENT_LENGTH", ""))
-            print(env["wsgi.input"].read(contentlen))
+            songpath = env["wsgi.input"].read(contentlen)
+            play_song(songpath)
             start_response("200 OK", [])
             return []
 
