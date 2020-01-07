@@ -6,6 +6,9 @@
 	<body>
 		<ul id="songlist">
 		</ul>
+		<div id="controls">
+			<input id="progress" type="range" min="0" max="100" value="0" step="1"></input>
+		</div>
 	</body>
 
 	<style>
@@ -50,16 +53,43 @@
 			-ms-user-select: none;
 			user-select: none;
 		}
+		#controls {
+			position: fixed;
+			left: 0px;
+			bottom: 0px;
+			width: 100%;
+			height: 10%;
+		}
+		#progress {
+			border: 0;
+			width: 100%;
+			height: 2px;
+		}
 	</style>
 
 	<script defer>
+		var sampleLen = 0;
 		function playSong(e) {
+			sampleLen = 0;
+
 			let songpath = `converted/${e.target.getAttribute("data-songname")}`;
 			console.log(songpath);
 			let xhr = new XMLHttpRequest();
 			xhr.overrideMimeType("text/plain");
 			xhr.open("POST", "/playsong");
+			xhr.onload = () => {
+				sampleLen = parseInt(xhr.response);
+			};
 			xhr.send(songpath);
+		}
+		function getElapsed(cb) {
+			let xhr = new XMLHttpRequest();
+			xhr.overrideMimeType("text/plain");
+			xhr.open("POST", "/getelapsed");
+			xhr.onload = () => {
+				cb(xhr.response);
+			};
+			xhr.send();
 		}
 
 		function updateSongList() {
@@ -83,5 +113,11 @@
 			xhr.send();
 		}
 		updateSongList();
+
+		setInterval(() => {
+			getElapsed((x) => {
+				document.getElementById("progress").value = 100 * (parseInt(x) / sampleLen);
+			});
+		}, 60);
 	</script>
 </html>

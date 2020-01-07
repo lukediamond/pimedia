@@ -1,5 +1,3 @@
-#define _POSIX_C_SOURCE 20112L
-#define _XOPEN_SOURCE 600
 
 /* standard library includes */
 #include <stdint.h>
@@ -10,7 +8,7 @@
 #include <unistd.h>
 #include <fcntl.h>
 #include <sys/stat.h>
-#include <sys/time.h>
+#include <time.h>
 /* network includes */
 #include <sys/socket.h>
 #include <arpa/inet.h>
@@ -27,7 +25,7 @@
 const int SAMPLE_RATE = 44100;
 const int CHUNK_SIZE = SAMPLE_RATE * 2;
 
-size_t nanos() {
+uint64_t nanos() {
 	struct timespec ts;
 
 	clock_gettime(CLOCK_REALTIME, &ts);
@@ -47,22 +45,31 @@ typedef struct {
 	int16_t* backbuf;
 } PlayThreadArgs;
 
+uint64_t played_elapsed = 0;
 void* playthread_func(void* pargs) {
 	PlayThreadArgs* args = (PlayThreadArgs*) pargs;
+	int num_chunks = 0;
 
+	played_elapsed = 0;
 	while (playthread_active) {
-		int16_t* oldbuf ;
+		int16_t* oldbuf;
 		int numread;
 
 		numread = read(args->fd, args->backbuf, CHUNK_SIZE * sizeof(int16_t));
 		if (numread <= 0) break;
 		args->chunk.alen = numread;
-		while (playthread_active && (Mix_Paused(0) || Mix_Playing(0))) usleep(10000);
+		while (playthread_active && (Mix_Paused(0) || Mix_Playing(0))) {
+			usleep(10000);
+			if (Mix_Playing(0))
+				played_elapsed += 10000;
+		}
 		if (!playthread_active) break;
 		oldbuf = (int16_t*) args->chunk.abuf;
 		args->chunk.abuf = (Uint8*) args->backbuf;
 		args->backbuf = oldbuf;
 		Mix_PlayChannel(0, &args->chunk, 0);
+		played_elapsed = 1000000 * num_chunks * (CHUNK_SIZE / SAMPLE_RATE);
+		++num_chunks;
 	} 
 	playthread_active = 0;
 
@@ -94,11 +101,14 @@ void playthread_start(PlayThreadArgs* args) {
 const uint8_t MT_PLAY = 0;
 const uint8_t MT_PAUSE = 1;
 const uint8_t MT_RESUME = 2;
-const uint8_t MT_GETTIME = 3;
+const uint8_t MT_GETELAPSED = 4;
 
 typedef struct {
 	char filename[128];
 } Message_Play;
+typedef struct {
+	uint32_t sample;
+} Message_Seek;
 
 int main() {
 	PlayThreadArgs ptargs;	
@@ -170,7 +180,6 @@ int main() {
 		if (mtype == MT_PLAY) {
 			Message_Play mesg = {0};
 
-
 			read(remote, &mesg, sizeof(mesg));
 			printf("received play request: %s\n", mesg.filename);
 			ptargs.fd = open(mesg.filename, O_RDONLY);	
@@ -198,6 +207,15 @@ int main() {
 			/* resume audio if audio was playing */
 			if (playthread_active)
 				Mix_Resume(0);
+		}
+		if (mtype == MT_SEEK) {
+			Message_Seek mesg;
+			
+			read(remote, &mesg, sizeof(mesg));
+		}
+		if (mtype == MT_GETELAPSED) {
+			uint32_t nsamples = SAMPLE_RATE * played_elapsed / 1000000;
+			write(remote, &nsamples, 4);
 		}
 		/* close remote connection */
 		close(remote);
