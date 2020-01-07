@@ -1,0 +1,87 @@
+<html>
+	<head>
+		<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+	</head>
+
+	<body>
+		<ul id="songlist">
+		</ul>
+	</body>
+
+	<style>
+		body {
+			background: #282828;
+		}
+		#songlist {
+			position: fixed;
+			left: 0px;
+			top: 0px;
+			width: 100%;
+			height: 90%;
+			overflow: hidden;
+			overflow-y: scroll;
+			list-style-type: none;
+			padding: 0px;
+		}
+		#songlist * {
+			display: block;
+			position: relative;
+			left: 0px;
+			top: 0px;
+			width: 100%;
+			font-size: 2.5em;
+			text-align: center;
+			background: #333;
+			color: #eee;
+			padding: 10px 0px 10px 0px;
+			border-bottom: solid 2px #282828;
+			cursor: pointer;
+			transition: background 0.01s;
+			-moz-transition: background 0.01s;
+			-webkit-transition: background 0.01s;
+		}
+		#songlist li:active {
+			background: #282828;
+		}
+		.noselect {
+			-webkit-touch-callout: none;
+			-webkit-user-select: none;
+			-moz-user-select: none;
+			-ms-user-select: none;
+			user-select: none;
+		}
+	</style>
+
+	<script defer>
+		function playSong(e) {
+			let songpath = `converted/${e.target.getAttribute("data-songname")}`;
+			console.log(songpath);
+			let xhr = new XMLHttpRequest();
+			xhr.overrideMimeType("text/plain");
+			xhr.open("POST", "/playsong");
+			xhr.send(songpath);
+		}
+
+		function updateSongList() {
+			let xhr = new XMLHttpRequest();
+			xhr.open("POST", "/getlist");
+			xhr.overrideMimeType("text/json");
+			xhr.onload = () => {
+				let songs = JSON.parse(xhr.response);
+				let songList = document.getElementById("songlist");
+				for (let song of songs) {
+					let entry = document.createElement("LI");
+					entry.classList.add("noselect");
+					entry.setAttribute("data-songname", song);
+					let dotsplit = song.split(".");
+					dotsplit.pop();
+					entry.innerHTML = dotsplit.join(".");
+					entry.onclick = playSong;
+					songlist.appendChild(entry);
+				}
+			}
+			xhr.send();
+		}
+		updateSongList();
+	</script>
+</html>
