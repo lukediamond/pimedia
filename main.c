@@ -46,9 +46,9 @@ typedef struct {
 } PlayThreadArgs;
 
 uint64_t played_elapsed = 0;
+int chunks_played = 0;
 void* playthread_func(void* pargs) {
 	PlayThreadArgs* args = (PlayThreadArgs*) pargs;
-	int num_chunks = 0;
 
 	played_elapsed = 0;
 	while (playthread_active) {
@@ -68,8 +68,8 @@ void* playthread_func(void* pargs) {
 		args->chunk.abuf = (Uint8*) args->backbuf;
 		args->backbuf = oldbuf;
 		Mix_PlayChannel(0, &args->chunk, 0);
-		played_elapsed = 1000000 * num_chunks * (CHUNK_SIZE / SAMPLE_RATE);
-		++num_chunks;
+		played_elapsed = 1000000 * chunks_played * (CHUNK_SIZE / SAMPLE_RATE);
+		++chunks_played;
 	} 
 	playthread_active = 0;
 
@@ -101,6 +101,7 @@ void playthread_start(PlayThreadArgs* args) {
 const uint8_t MT_PLAY = 0;
 const uint8_t MT_PAUSE = 1;
 const uint8_t MT_RESUME = 2;
+const uint8_t MT_SEEK = 3;
 const uint8_t MT_GETELAPSED = 4;
 
 typedef struct {
@@ -188,7 +189,7 @@ int main() {
 				uint32_t nsamples;
 
 				fstat(ptargs.fd, &st);
-				nsamples = st.st_size;
+				nsamples = st.st_size / sizeof(int16_t);
 				write(remote, &nsamples, 4);
 				playthread_start(&ptargs);
 			}
@@ -212,9 +213,24 @@ int main() {
 			Message_Seek mesg;
 			
 			read(remote, &mesg, sizeof(mesg));
+			if (ptargs.fd > 0) {
+				struct stat st;
+
+				fstat(ptargs.fd, &st);
+				if (mesg.sample >= st.st_size / sizeof(int16_t)) 
+					mesg.sample = st.st_size / sizeof(int16_t) - 1;
+				printf("received seek request to sample %u of %lu\n", mesg.sample, st.st_size / 2);
+				//playthread_stop();
+				played_elapsed = mesg.sample;
+				chunks_played = mesg.sample / CHUNK_SIZE;
+				lseek(ptargs.fd, mesg.sample * sizeof(int16_t), SEEK_SET);
+				if (!playthread_active)
+					playthread_start(&ptargs);
+				Mix_HaltChannel(0);
+			}
 		}
 		if (mtype == MT_GETELAPSED) {
-			uint32_t nsamples = SAMPLE_RATE * played_elapsed / 1000000;
+			uint32_t nsamples = (SAMPLE_RATE * played_elapsed) / 1000000;
 			write(remote, &nsamples, 4);
 		}
 		/* close remote connection */
