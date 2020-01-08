@@ -8,7 +8,7 @@
 		<ul id="songlist">
 		</ul>
 		<div id="controls">
-			<input onclick="seek(event)" id="progress" type="range" min="0" max="100" value="0"></input>
+			<input onclick="seek(event)" ontouchend="seek(event)" id="progress" type="range" min="0" max="100" value="0"></input>
 			<button id="pause" onclick="pause()">pause</button>
 			<button id="resume" onclick="resume()">resume</button>
 		</div>
@@ -64,9 +64,27 @@
 			height: 10%;
 		}
 		#progress {
+			-webkit-appearence: none;
+			-moz-appearence: none;
+			appearence: none;
+			background: #eee;
 			border: 0;
 			width: 100%;
+			height: 10px;
+			border: none;
+			outline: none;
+		}
+		#progress::-moz-focus-outer {
+			border: 0;
+		}
+		#progress::-moz-range-thumb {
+			width: 20px;
 			height: 20px;
+			background: #eee;
+			border-radius: 10px;
+			box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.5);
+			outline: none;
+			border: none;
 		}
 	</style>
 
