@@ -21,6 +21,12 @@ def play_song(sock, songname):
     sock.send(struct.pack("B", 0) + songname.encode("utf-8"))
     return struct.unpack("L", sock.recv(4))[0]
 @message
+def pause(sock):
+    sock.send(struct.pack("B", 1))
+@message
+def resume(sock):
+    sock.send(struct.pack("B", 2))
+@message
 def seek(sock, sample):
     sock.send(struct.pack("<BL", 3, sample))
 @message
@@ -61,6 +67,14 @@ def application(env, start_response):
             sample = int(round(float("0" + env["wsgi.input"].read(contentlen))))
             print(struct.pack("L", sample))
             seek(sample)
+            start_response("200 OK", [])
+            return [b""]
+        if uri == "/resume":
+            resume()
+            start_response("200 OK", [])
+            return [b""]
+        if uri == "/pause":
+            pause()
             start_response("200 OK", [])
             return [b""]
 

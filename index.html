@@ -9,6 +9,8 @@
 		</ul>
 		<div id="controls">
 			<input onclick="seek(event)" id="progress" type="range" min="0" max="100" value="0"></input>
+			<button id="pause" onclick="pause()">pause</button>
+			<button id="resume" onclick="resume()">resume</button>
 		</div>
 	</body>
 
@@ -106,6 +108,18 @@
 			};
 			xhr.send();
 		}
+		function pause() {
+			let xhr = new XMLHttpRequest();
+			xhr.open("POST", "/pause");
+			xhr.overrideMimeType("text/json");
+			xhr.send();
+		}
+		function resume() {
+			let xhr = new XMLHttpRequest();
+			xhr.open("POST", "/resume");
+			xhr.overrideMimeType("text/json");
+			xhr.send();
+		}
 
 		function updateSongList() {
 			let xhr = new XMLHttpRequest();
@@ -130,7 +144,6 @@
 		updateSongList();
 
 		setInterval(() => {
-			console.log(sampleLen);
 			getElapsed((x) => {
 				if (seeking) return;
 				document.getElementById("progress").value = 100 * (x / sampleLen);

@@ -58,11 +58,6 @@ void* playthread_func(void* pargs) {
 		numread = read(args->fd, args->backbuf, CHUNK_SIZE * sizeof(int16_t));
 		if (numread <= 0) break;
 		args->chunk.alen = numread;
-		while (playthread_active && (Mix_Paused(0) || Mix_Playing(0))) {
-			usleep(10000);
-			if (Mix_Playing(0))
-				played_elapsed += 10000;
-		}
 		if (!playthread_active) break;
 		oldbuf = (int16_t*) args->chunk.abuf;
 		args->chunk.abuf = (Uint8*) args->backbuf;
@@ -70,6 +65,11 @@ void* playthread_func(void* pargs) {
 		Mix_PlayChannel(0, &args->chunk, 0);
 		played_elapsed = 1000000 * chunks_played * (CHUNK_SIZE / SAMPLE_RATE);
 		++chunks_played;
+		while (playthread_active && (Mix_Paused(0) || Mix_Playing(0))) {
+			usleep(10000);
+			if (!Mix_Paused(0) && Mix_Playing(0))
+				played_elapsed += 10000;
+		}
 	} 
 	playthread_active = 0;
 
@@ -215,18 +215,26 @@ int main() {
 			read(remote, &mesg, sizeof(mesg));
 			if (ptargs.fd > 0) {
 				struct stat st;
+				int waspaused;
 
 				fstat(ptargs.fd, &st);
 				if (mesg.sample >= st.st_size / sizeof(int16_t)) 
 					mesg.sample = st.st_size / sizeof(int16_t) - 1;
 				printf("received seek request to sample %u of %lu\n", mesg.sample, st.st_size / 2);
-				//playthread_stop();
+				waspaused = Mix_Paused(0);
+				Mix_Pause(0);
 				played_elapsed = mesg.sample;
 				chunks_played = mesg.sample / CHUNK_SIZE;
 				lseek(ptargs.fd, mesg.sample * sizeof(int16_t), SEEK_SET);
 				if (!playthread_active)
 					playthread_start(&ptargs);
-				Mix_HaltChannel(0);
+				Mix_Resume(0);
+				if (Mix_Playing(0) || Mix_Paused(0))
+					Mix_HaltChannel(0);
+				if (waspaused) {
+					while (!Mix_Playing(0));
+					Mix_Pause(0);
+				}
 			}
 		}
 		if (mtype == MT_GETELAPSED) {
