@@ -5,12 +5,17 @@
 	</head>
 
 	<body>
+		<h3 id="nowplaying"></h3>
 		<ul id="songlist">
 		</ul>
 		<div id="controls">
-			<input onclick="seek(event)" ontouchend="seek(event)" id="progress" type="range" min="0" max="100" value="0"></input>
-			<button id="pause" onclick="pause()">pause</button>
-			<button id="resume" onclick="resume()">resume</button>
+			<input onmousedown="seeking=true" ontouchbegin="seeking=true" onmouseup="seek(event)" ontouchend="seek(event)" id="progress" type="range" min="0" max="100" value="0"></input>
+			<button class="control" id="pause" onclick="pause()">Pause</button>
+			<button class="control" id="resume" onclick="resume()">Resume</button>
+			<form id="fileform" method="POST" action="/upload" class="control" enctype="multipart/form-data">
+				<input id="file" name="file" onchange="upload()" accept=".mp3,.wav,.ogg,.flac" type="file"></input>
+				<label for="file">Upload</label>
+			</form>
 		</div>
 	</body>
 
@@ -21,17 +26,19 @@
 		#songlist {
 			position: fixed;
 			left: 0px;
-			top: 0px;
+			top: 24px;
 			width: 100%;
-			height: 90%;
+			height: 80%;
 			overflow: hidden;
 			overflow-y: scroll;
 			list-style-type: none;
 			padding: 0px;
+			margin: 0px;
 		}
 		#songlist * {
 			display: block;
 			position: relative;
+			margin: 0px;
 			left: 0px;
 			top: 0px;
 			width: 100%;
@@ -57,11 +64,60 @@
 			user-select: none;
 		}
 		#controls {
+			padding-top: 24px;
 			position: fixed;
 			left: 0px;
 			bottom: 0px;
 			width: 100%;
-			height: 10%;
+			height: 20%;
+		}
+		.control {
+			display: inline-block;
+			width: 64px;
+			height: 64px;
+			border-radius: 4px;
+			border: solid 2px #eee;
+			background: #282828;
+			color: #eee;
+			padding: 0px;
+			margin: 0px;
+			font-size: 14px;
+			font-family: Arial;
+			text-align: center;
+			vertical-align: middle;
+			transition: background 0.01s;
+			-moz-transition: background 0.01s;
+			-webkit-transition: background 0.01s;
+		}
+		.control:active {
+			background: #333;
+		}
+		#file {
+			position: absolute;
+			display: inline-block;
+			visibility: hidden;
+			width: 0px;
+			height: 0px;
+			border: none;
+			clip: rect(0, 0, 0, 0);
+			overflow: hidden;
+			padding: 0px;
+			background: none;
+		}
+		#nowplaying {
+			display: block;
+			position: fixed;
+			left: 0px;
+			top: 0px;
+			width: 100%;
+			height: 24px;
+			font-size: 20px;
+			color: #282828;
+			background: #eee;
+			margin: 0px;
+			padding: 0px;
+			text-align: center;
+			vertical-align: middle;
 		}
 		#progress {
 			-webkit-appearence: none;
@@ -70,14 +126,32 @@
 			background: #eee;
 			border: 0;
 			width: 100%;
-			height: 10px;
+			height: 5px;
 			border: none;
 			outline: none;
 		}
 		#progress::-moz-focus-outer {
 			border: 0;
 		}
+		#progress::-ie-track {
+			background: none;
+		}
+		#progress::-moz-range-track {
+			background: none;
+		}
+		#progress::-webkit-slider-runnable-track {
+			background: none;
+		}
 		#progress::-moz-range-thumb {
+			width: 20px;
+			height: 20px;
+			background: #eee;
+			border-radius: 10px;
+			box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.5);
+			outline: none;
+			border: none;
+		}
+		#progress::-webkit-slider-thumb {
 			width: 20px;
 			height: 20px;
 			background: #eee;
@@ -93,7 +167,8 @@
 		var sampleLen = 0;
 		function playSong(e) {
 			sampleLen = 0;
-
+			document.getElementById("nowplaying").innerHTML = 
+				"Now Playing: " + e.target.innerHTML;
 			let songpath = `converted/${e.target.getAttribute("data-songname")}`;
 			console.log(songpath);
 			let xhr = new XMLHttpRequest();
@@ -103,6 +178,10 @@
 				sampleLen = parseInt(xhr.response);
 			};
 			xhr.send(songpath);
+		}
+		
+		function upload() {
+			document.getElementById("fileform").submit();
 		}
 
 		let seeking = false;
@@ -162,9 +241,10 @@
 		updateSongList();
 
 		setInterval(() => {
+			return;
 			getElapsed((x) => {
 				if (seeking) return;
-				document.getElementById("progress").value = 100 * (x / sampleLen);
+				document.getElementById("progress").value = 100 * (x / sampleLen) || 0;
 			});
 		}, 32);
 	</script>

@@ -51,6 +51,7 @@ void* playthread_func(void* pargs) {
 	PlayThreadArgs* args = (PlayThreadArgs*) pargs;
 
 	played_elapsed = 0;
+	chunks_played = 0;
 	while (playthread_active) {
 		int16_t* oldbuf;
 		int numread;
@@ -223,11 +224,11 @@ int main() {
 				printf("received seek request to sample %u of %lu\n", mesg.sample, st.st_size / 2);
 				waspaused = Mix_Paused(0);
 				Mix_Pause(0);
-				played_elapsed = mesg.sample;
-				chunks_played = mesg.sample / CHUNK_SIZE;
 				lseek(ptargs.fd, mesg.sample * sizeof(int16_t), SEEK_SET);
 				if (!playthread_active)
 					playthread_start(&ptargs);
+				played_elapsed = mesg.sample;
+				chunks_played = mesg.sample / CHUNK_SIZE;
 				Mix_Resume(0);
 				if (Mix_Playing(0) || Mix_Paused(0))
 					Mix_HaltChannel(0);

@@ -77,6 +77,14 @@ def application(env, start_response):
             pause()
             start_response("200 OK", [])
             return [b""]
+        if uri == "/upload":
+            form = cgi.FieldStorage(fp=env["wsgi.input"], environ=env)
+            fname = form["file"].filename
+            fdata = form["file"].value
+            start_response("200 OK", [])
+            with open("index.html", "r") as f:
+                data = f.read()
+            return [data.encode("utf-8")]
 
 
     if method == "GET":
