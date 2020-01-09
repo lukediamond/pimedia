@@ -241,7 +241,6 @@
 		updateSongList();
 
 		setInterval(() => {
-			return;
 			getElapsed((x) => {
 				if (seeking) return;
 				document.getElementById("progress").value = 100 * (x / sampleLen) || 0;

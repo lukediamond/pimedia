@@ -81,10 +81,17 @@ def application(env, start_response):
             form = cgi.FieldStorage(fp=env["wsgi.input"], environ=env)
             fname = form["file"].filename
             fdata = form["file"].value
-            start_response("200 OK", [])
+            tmpname = "tmp/" + fname
+            cvtname = "converted/" + "".join(fname.split(".")[:-1]) + ".raw"
+            with open(tmpname, "wb") as f:
+                f.write(bytes(fdata))
+            os.system("ffmpeg -i \"" + tmpname + "\" -f s16le -acodec pcm_s16le -ar 44100 -ac 1 \"" + cvtname + "\"")
+            os.remove(tmpname)
+
+            start_response("301 Moved Permanently", [("Location", "/")])
             with open("index.html", "r") as f:
                 data = f.read()
-            return [data.encode("utf-8")]
+            return [b""]
 
 
     if method == "GET":
