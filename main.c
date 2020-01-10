@@ -23,7 +23,7 @@
 #include <wiringPi.h>
 
 const int SAMPLE_RATE = 44100;
-const int CHUNK_SIZE = SAMPLE_RATE * 2;
+const int CHUNK_SIZE = SAMPLE_RATE * 1000;
 
 uint64_t nanos() {
 	struct timespec ts;
@@ -56,6 +56,7 @@ void* playthread_func(void* pargs) {
 		int16_t* oldbuf;
 		int numread;
 
+		digitalWrite(15, HIGH);
 		numread = read(args->fd, args->backbuf, CHUNK_SIZE * sizeof(int16_t));
 		if (numread <= 0) break;
 		args->chunk.alen = numread;
@@ -66,6 +67,7 @@ void* playthread_func(void* pargs) {
 		Mix_PlayChannel(0, &args->chunk, 0);
 		played_elapsed = 1000000 * chunks_played * (CHUNK_SIZE / SAMPLE_RATE);
 		++chunks_played;
+		digitalWrite(15, LOW);
 		while (playthread_active && (Mix_Paused(0) || Mix_Playing(0))) {
 			usleep(10000);
 			if (!Mix_Paused(0) && Mix_Playing(0))
@@ -115,6 +117,9 @@ typedef struct {
 int main() {
 	PlayThreadArgs ptargs;	
 	int sock;
+	wiringPiSetup();
+	pinMode(15, OUTPUT);
+	pinMode(16, OUTPUT);
 
 	/* AUDIO */
 	{
@@ -175,13 +180,13 @@ int main() {
 		/* accept incoming connection */
 		int remote = accept(sock, NULL, NULL);
 		uint8_t mtype;
-
 		/* determine type of message (first byte) */
 		read(remote, &mtype, 1);
 		/* handle message type, reading additional data */
 		if (mtype == MT_PLAY) {
 			Message_Play mesg = {0};
 
+			digitalWrite(16, HIGH);
 			read(remote, &mesg, sizeof(mesg));
 			printf("received play request: %s\n", mesg.filename);
 			ptargs.fd = open(mesg.filename, O_RDONLY);	
@@ -197,22 +202,28 @@ int main() {
 			else {
 				printf("invalid file name: %s\n", mesg.filename);
 			}
+			digitalWrite(16, LOW);
 		}
 		if (mtype == MT_PAUSE) {
+			digitalWrite(16, HIGH);
 			printf("received pause request\n");
 			/* pause audio if audio is playing */
 			if (playthread_active)
 				Mix_Pause(0);
+			digitalWrite(16, LOW);
 		}
 		if (mtype == MT_RESUME) {
+			digitalWrite(16, HIGH);
 			printf("received resume request\n");
 			/* resume audio if audio was playing */
 			if (playthread_active)
 				Mix_Resume(0);
+			digitalWrite(16, LOW);
 		}
 		if (mtype == MT_SEEK) {
 			Message_Seek mesg;
 			
+			digitalWrite(16, HIGH);
 			read(remote, &mesg, sizeof(mesg));
 			if (ptargs.fd > 0) {
 				struct stat st;
@@ -237,6 +248,7 @@ int main() {
 					Mix_Pause(0);
 				}
 			}
+			digitalWrite(16, LOW);
 		}
 		if (mtype == MT_GETELAPSED) {
 			uint32_t nsamples = (SAMPLE_RATE * played_elapsed) / 1000000;

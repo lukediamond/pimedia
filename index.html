@@ -12,9 +12,11 @@
 			<input onmousedown="seeking=true" ontouchbegin="seeking=true" onmouseup="seek(event)" ontouchend="seek(event)" id="progress" type="range" min="0" max="100" value="0"></input>
 			<button class="control" id="pause" onclick="pause()">Pause</button>
 			<button class="control" id="resume" onclick="resume()">Resume</button>
-			<form id="fileform" method="POST" action="/upload" class="control" enctype="multipart/form-data">
-				<input id="file" name="file" onchange="upload()" accept=".mp3,.wav,.ogg,.flac" type="file"></input>
-				<label style="display: block;" for="file">Upload</label>
+			<form id="fileform" class="control" method="POST" action="/upload" enctype="multipart/form-data">
+				<div id="formcontainer">
+					<input id="file" name="file" onchange="upload()" accept=".mp3,.wav,.ogg,.flac" type="file"></input>
+					<label for="file">Upload</label>
+				</div>
 			</form>
 		</div>
 	</body>
@@ -91,17 +93,33 @@
 		.control:active {
 			background: #333;
 		}
+		#filecontainer {
+			display: flex;
+			width: 100%;
+			height: 100%;
+			align-items: center;
+		}
 		#file {
-			position: absolute;
 			display: inline-block;
-			visibility: hidden;
+			position: relative;
+			left: 0px;
+			top: 0px;
 			width: 0px;
 			height: 0px;
-			border: none;
-			clip: rect(0, 0, 0, 0);
-			overflow: hidden;
 			padding: 0px;
-			background: none;
+			margin: 0px;
+			border: none;
+			visibility: hidden;
+		}
+		#file + label {
+			display: inline-block;
+			position: relative;
+			left: 0px;
+			top: 0px;
+			width: 100%;
+			line-height: 100%;
+			text-align: center;
+			vertical-align: middle;
 		}
 		#nowplaying {
 			display: block;
