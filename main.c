@@ -23,7 +23,7 @@
 #include <wiringPi.h>
 
 const int SAMPLE_RATE = 44100;
-const int CHUNK_SIZE = SAMPLE_RATE * 1000;
+const int CHUNK_SIZE = SAMPLE_RATE * 2;
 
 uint64_t nanos() {
 	struct timespec ts;
@@ -46,17 +46,13 @@ typedef struct {
 } PlayThreadArgs;
 
 uint64_t played_elapsed = 0;
-int chunks_played = 0;
 void* playthread_func(void* pargs) {
 	PlayThreadArgs* args = (PlayThreadArgs*) pargs;
 
-	played_elapsed = 0;
-	chunks_played = 0;
 	while (playthread_active) {
 		int16_t* oldbuf;
 		int numread;
 
-		digitalWrite(15, HIGH);
 		numread = read(args->fd, args->backbuf, CHUNK_SIZE * sizeof(int16_t));
 		if (numread <= 0) break;
 		args->chunk.alen = numread;
@@ -65,9 +61,6 @@ void* playthread_func(void* pargs) {
 		args->chunk.abuf = (Uint8*) args->backbuf;
 		args->backbuf = oldbuf;
 		Mix_PlayChannel(0, &args->chunk, 0);
-		played_elapsed = 1000000 * chunks_played * (CHUNK_SIZE / SAMPLE_RATE);
-		++chunks_played;
-		digitalWrite(15, LOW);
 		while (playthread_active && (Mix_Paused(0) || Mix_Playing(0))) {
 			usleep(10000);
 			if (!Mix_Paused(0) && Mix_Playing(0))
@@ -106,20 +99,18 @@ const uint8_t MT_PAUSE = 1;
 const uint8_t MT_RESUME = 2;
 const uint8_t MT_SEEK = 3;
 const uint8_t MT_GETELAPSED = 4;
+const uint8_t MT_GETDURATION = 5;
 
 typedef struct {
 	char filename[128];
 } Message_Play;
 typedef struct {
-	uint32_t sample;
+	float timepoint;
 } Message_Seek;
 
 int main() {
 	PlayThreadArgs ptargs;	
 	int sock;
-	wiringPiSetup();
-	pinMode(15, OUTPUT);
-	pinMode(16, OUTPUT);
 
 	/* AUDIO */
 	{
@@ -186,60 +177,55 @@ int main() {
 		if (mtype == MT_PLAY) {
 			Message_Play mesg = {0};
 
-			digitalWrite(16, HIGH);
 			read(remote, &mesg, sizeof(mesg));
 			printf("received play request: %s\n", mesg.filename);
 			ptargs.fd = open(mesg.filename, O_RDONLY);	
 			if (ptargs.fd > 0)  {
 				struct stat st;
-				uint32_t nsamples;
+				float duration;
 
 				fstat(ptargs.fd, &st);
-				nsamples = st.st_size / sizeof(int16_t);
-				write(remote, &nsamples, 4);
+				duration = ((float) st.st_size / sizeof(int16_t)) / SAMPLE_RATE;
+				write(remote, &duration, 4);
+				played_elapsed = 0;
 				playthread_start(&ptargs);
 			}
 			else {
 				printf("invalid file name: %s\n", mesg.filename);
 			}
-			digitalWrite(16, LOW);
 		}
 		if (mtype == MT_PAUSE) {
-			digitalWrite(16, HIGH);
 			printf("received pause request\n");
 			/* pause audio if audio is playing */
 			if (playthread_active)
 				Mix_Pause(0);
-			digitalWrite(16, LOW);
 		}
 		if (mtype == MT_RESUME) {
-			digitalWrite(16, HIGH);
 			printf("received resume request\n");
 			/* resume audio if audio was playing */
 			if (playthread_active)
 				Mix_Resume(0);
-			digitalWrite(16, LOW);
 		}
 		if (mtype == MT_SEEK) {
 			Message_Seek mesg;
 			
-			digitalWrite(16, HIGH);
 			read(remote, &mesg, sizeof(mesg));
 			if (ptargs.fd > 0) {
 				struct stat st;
+				uint32_t sample;
 				int waspaused;
 
 				fstat(ptargs.fd, &st);
-				if (mesg.sample >= st.st_size / sizeof(int16_t)) 
-					mesg.sample = st.st_size / sizeof(int16_t) - 1;
-				printf("received seek request to sample %u of %lu\n", mesg.sample, st.st_size / 2);
+				sample = (uint32_t) (mesg.timepoint * SAMPLE_RATE);
+				if (sample >= st.st_size / sizeof(int16_t)) 
+					sample = st.st_size / sizeof(int16_t) - 1;
+				printf("received seek request to sample %u of %lu\n", sample, st.st_size / 2);
 				waspaused = Mix_Paused(0);
 				Mix_Pause(0);
-				lseek(ptargs.fd, mesg.sample * sizeof(int16_t), SEEK_SET);
+				lseek(ptargs.fd, sample * sizeof(int16_t), SEEK_SET);
+				played_elapsed = (uint64_t) (1000000 * mesg.timepoint);
 				if (!playthread_active)
 					playthread_start(&ptargs);
-				played_elapsed = mesg.sample;
-				chunks_played = mesg.sample / CHUNK_SIZE;
 				Mix_Resume(0);
 				if (Mix_Playing(0) || Mix_Paused(0))
 					Mix_HaltChannel(0);
@@ -248,11 +234,18 @@ int main() {
 					Mix_Pause(0);
 				}
 			}
-			digitalWrite(16, LOW);
 		}
 		if (mtype == MT_GETELAPSED) {
-			uint32_t nsamples = (SAMPLE_RATE * played_elapsed) / 1000000;
-			write(remote, &nsamples, 4);
+			float elapsed = (float) played_elapsed / 1000000.0f;
+			write(remote, &elapsed, 4);
+		}
+		if (mtype == MT_GETDURATION) {
+			struct stat st;
+			float duration;
+
+			fstat(ptargs.fd, &st);
+			duration = (float) st.st_size / sizeof(int16_t) / SAMPLE_RATE;
+			write(remote, &duration, 4);
 		}
 		/* close remote connection */
 		close(remote);

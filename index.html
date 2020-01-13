@@ -9,15 +9,17 @@
 		<ul id="songlist">
 		</ul>
 		<div id="controls">
-			<input onmousedown="seeking=true" ontouchbegin="seeking=true" onmouseup="seek(event)" ontouchend="seek(event)" id="progress" type="range" min="0" max="100" value="0"></input>
-			<button class="control" id="pause" onclick="pause()">Pause</button>
-			<button class="control" id="resume" onclick="resume()">Resume</button>
-			<form id="fileform" class="control" method="POST" action="/upload" enctype="multipart/form-data">
-				<div id="formcontainer">
-					<input id="file" name="file" onchange="upload()" accept=".mp3,.wav,.ogg,.flac" type="file"></input>
-					<label for="file">Upload</label>
-				</div>
-			</form>
+			<input onmousedown="seeking=true;" ontouchbegin="seeking=true;" onmouseup="seek(event)" ontouchend="seek(event)" id="progress" type="range" min="0" max="100" value="0"></input>
+			<div>
+				<button class="control" id="pause" onclick="pause()">Pause</button>
+				<button class="control" id="resume" onclick="resume()">Resume</button>
+				<form id="fileform" class="control" method="POST" action="/upload" enctype="multipart/form-data">
+					<div id="formcontainer">
+						<input id="file" name="file" onchange="upload()" accept=".mp3,.wav,.ogg,.flac" type="file"></input>
+						<label for="file">Upload</label>
+					</div>
+				</form>
+			</div>
 		</div>
 	</body>
 
@@ -66,6 +68,9 @@
 			user-select: none;
 		}
 		#controls {
+			display: flex;
+			flex-direction: column;
+			align-items: center;
 			position: fixed;
 			left: 0px;
 			bottom: -24px;
@@ -81,7 +86,7 @@
 			background: #282828;
 			color: #eee;
 			padding: 0px;
-			margin: 0px;
+			margin: 10px;
 			font-size: 14px;
 			font-family: Arial;
 			text-align: center;
@@ -97,7 +102,9 @@
 			display: flex;
 			width: 100%;
 			height: 100%;
-			align-items: center;
+			align-items: baseline;
+			padding: 0px;
+			margin: 0px;
 		}
 		#file {
 			display: inline-block;
@@ -137,6 +144,7 @@
 			vertical-align: middle;
 		}
 		#progress {
+			display: block;
 			-webkit-appearence: none;
 			-moz-appearence: none;
 			appearence: none;
@@ -181,9 +189,9 @@
 
 	<script defer>
 
-		var sampleLen = 0;
+		var duration = 0;
 		function playSong(e) {
-			sampleLen = 0;
+			duration = 0;
 			document.getElementById("nowplaying").innerHTML = 
 				"Now Playing: " + e.target.innerHTML;
 			let songpath = `converted/${e.target.getAttribute("data-songname")}`;
@@ -191,10 +199,8 @@
 			let xhr = new XMLHttpRequest();
 			xhr.overrideMimeType("text/plain");
 			xhr.open("POST", "/playsong");
-			xhr.onload = () => {
-				sampleLen = parseInt(xhr.response);
-			};
 			xhr.send(songpath);
+			getDuration((dur) => { duration = dur; });
 		}
 		
 		function upload() {
@@ -204,21 +210,33 @@
 		let seeking = false;
 		function seek(e) {
 			seeking = true;
-			if (sampleLen <= 0) return;
-			let sample = (document.getElementById("progress").value * sampleLen) / 100;
+			if (duration <= 0) return;
+			let point = (document.getElementById("progress").value * duration) / 100;
 			
 			let xhr = new XMLHttpRequest();
 			xhr.overrideMimeType("text/plain");
 			xhr.open("POST", "/seek");
-			xhr.send(sample.toString());
+			xhr.onload = () => {
+				seeking = false;
+			};
+			xhr.send(point.toString());
 			seeking = false;
+		}
+		function getDuration(cb) {
+			let xhr = new XMLHttpRequest();
+			xhr.overrideMimeType("text/plain");
+			xhr.open("POST", "/getduration");
+			xhr.onload = () => {
+				cb(parseFloat(xhr.response));
+			};
+			xhr.send();
 		}
 		function getElapsed(cb) {
 			let xhr = new XMLHttpRequest();
 			xhr.overrideMimeType("text/plain");
 			xhr.open("POST", "/getelapsed");
 			xhr.onload = () => {
-				cb(parseInt(xhr.response));
+				cb(parseFloat(xhr.response));
 			};
 			xhr.send();
 		}
@@ -256,11 +274,12 @@
 			xhr.send();
 		}
 		updateSongList();
+		getDuration((dur) => { duration = dur; });
 
 		setInterval(() => {
-			getElapsed((x) => {
+			getElapsed((timePoint) => {
 				if (seeking) return;
-				document.getElementById("progress").value = 100 * (x / sampleLen) || 0;
+				document.getElementById("progress").value = 100 * (timePoint / duration) || 0;
 			});
 		}, 32);
 	</script>

@@ -12,14 +12,14 @@ def message(func):
             sock.connect(("0.0.0.0", 44))
             ret = func(sock, *args)
             sock.close()
-        except: pass
+        except:
+            print("Failed to connect")
         return ret
     return wrapper
 
 @message
 def play_song(sock, songname):
     sock.send(struct.pack("B", 0) + songname.encode("utf-8"))
-    return struct.unpack("L", sock.recv(4))[0]
 @message
 def pause(sock):
     sock.send(struct.pack("B", 1))
@@ -27,14 +27,20 @@ def pause(sock):
 def resume(sock):
     sock.send(struct.pack("B", 2))
 @message
-def seek(sock, sample):
-    sock.send(struct.pack("<BL", 3, sample))
+def seek(sock, timept):
+    sock.send(struct.pack("<Bf", 3, timept))
 @message
 def get_elapsed(sock):
     sock.send(struct.pack("B", 4))
     resp = sock.recv(4)
-    if len(resp) < 4: return 0
-    return struct.unpack("L", resp)[0]
+    if len(resp) < 4: return 0.0
+    return struct.unpack("<f", resp)[0]
+@message
+def get_duration(sock):
+    sock.send(struct.pack("B", 5))
+    resp = sock.recv(4)
+    if len(resp) < 4: return 0.0
+    return struct.unpack("<f", resp)[0]
 
 def mime(path):
     if path.endswith(".js"): return "text/javascript"
@@ -63,10 +69,12 @@ def application(env, start_response):
         if uri == "/getelapsed":
             start_response("200 OK", [("Content-Type", "text/plain")])
             return [str(get_elapsed()).encode("utf-8")]
+        if uri == "/getduration":
+            start_response("200 OK", [("Content-Type", "text/plain")])
+            return [str(get_duration()).encode("utf-8")]
         if uri == "/seek":
-            sample = int(round(float("0" + env["wsgi.input"].read(contentlen))))
-            print(struct.pack("L", sample))
-            seek(sample)
+            timept = float("0" + env["wsgi.input"].read(contentlen))
+            seek(timept)
             start_response("200 OK", [])
             return [b""]
         if uri == "/resume":
