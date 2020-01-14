@@ -1,315 +1,315 @@
 <!DOCTYPE html>
 <html>
-	<head>
-		<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-	</head>
+    <head>
+        <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    </head>
 
-	<body>
-		<h3 id="nowplaying"></h3>
-		<ul id="songlist">
-		</ul>
-		<div id="controls">
-			<input onmousedown="seeking=true;" ontouchbegin="seeking=true;" onmouseup="seek(event)" ontouchend="seek(event)" id="progress" type="range" min="0" max="100" value="0"></input>
-			<div id="controlsinner">
-				<p id="elapsed" class="time"></p>
-				<div>
-					<button class="control" id="pause" onclick="pause()"><img class="icon" src="play.svg"></img></button>
-					<button class="control" id="resume" onclick="resume()"><img class="icon" src="pause.svg"></img></button>
-				<form id="fileform" class="control" method="POST" action="/upload" enctype="multipart/form-data">
-					<div id="formcontainer">
-						<input id="file" name="file" onchange="upload()" accept=".mp3,.wav,.ogg,.flac" type="file"></input>
-						<label for="file"><img class="icon" src="upload.svg"></img></label>
-					</div>
-				</form>
-				</div>
-				<p id="duration" class="time"></p>
-			</div>
-		</div>
-	</body>
+    <body>
+        <h3 id="nowplaying"></h3>
+        <ul id="songlist">
+        </ul>
+        <div id="controls">
+            <input onmousedown="seeking=true;" ontouchbegin="seeking=true;" onmouseup="seek(event)" ontouchend="seek(event)" id="progress" type="range" min="0" max="100" value="0"></input>
+            <div id="controlsinner">
+                <p id="elapsed" class="time"></p>
+                <div>
+                    <button class="control" id="pause" onclick="pause()"><img class="icon" src="play.svg"></img></button>
+                    <button class="control" id="resume" onclick="resume()"><img class="icon" src="pause.svg"></img></button>
+                <form id="fileform" class="control" method="POST" action="/upload" enctype="multipart/form-data">
+                    <div id="formcontainer">
+                        <input id="file" name="file" onchange="upload()" accept=".mp3,.wav,.ogg,.flac" type="file"></input>
+                        <label for="file"><img class="icon" src="upload.svg"></img></label>
+                    </div>
+                </form>
+                </div>
+                <p id="duration" class="time"></p>
+            </div>
+        </div>
+    </body>
 
-	<style>
-		body {
-			background: #282828;
-		}
-		.time {
-			color: #eee;
-			text-align: center;
-			vertical-align: center;
-			padding-left: 40px;
-			padding-right: 40px;
-			font-size: 14px;
-		}
-		#songlist {
-			position: fixed;
-			left: 0px;
-			top: 24px;
-			width: 100%;
-			height: 80%;
-			overflow: hidden;
-			overflow-y: scroll;
-			list-style-type: none;
-			padding: 0px;
-			margin: 0px;
-		}
-		#songlist * {
-			display: block;
-			position: relative;
-			margin: 0px;
-			left: 0px;
-			top: 0px;
-			width: 100%;
-			font-size: 2.0em;
-			text-align: center;
-			background: #333;
-			color: #eee;
-			padding: 10px 0px 10px 0px;
-			border-bottom: solid 2px #282828;
-			cursor: pointer;
-			transition: background 0.01s;
-			-moz-transition: background 0.01s;
-			-webkit-transition: background 0.01s;
-		}
-		#songlist li:active {
-			background: #282828;
-		}
-		.noselect {
-			-webkit-touch-callout: none;
-			-webkit-user-select: none;
-			-moz-user-select: none;
-			-ms-user-select: none;
-			user-select: none;
-		}
-		#controlsinner {
-			display: flex;
-			flex-direction: row;
-			align-items: center;
-			width: 100%;
-			justify-content: space-between;
-		}
-		#controls {
-			display: flex;
-			flex-direction: column;
-			justify-content: space-evenly;
-			align-items: center;
-			position: fixed;
-			left: 0px;
-			bottom: -24px;
-			width: 100%;
-			height: 20%;
-		}
-		.icon {
-			width: 100%;
-			height: 100%;
-			color: white;
-		}
-		.control {
-			display: inline-block;
-			width: 24px;
-			height: 24px;
-			//border-radius: 4px;
-			border: solid 2px #eee;
-			background: #eee;
-			padding: 0px;
-			font-size: 14px;
-			font-family: Arial;
-			text-align: center;
-			vertical-align: middle;
-			transition: background 0.01s;
-			-moz-transition: background 0.01s;
-			-webkit-transition: background 0.01s;
-		}
-		.control:active {
-			background: #333;
-		}
-		#filecontainer {
-			display: flex;
-			width: 100%;
-			height: 100%;
-			align-items: baseline;
-			padding: 0px;
-			margin: 0px;
-		}
-		#file {
-			display: inline-block;
-			position: relative;
-			left: 0px;
-			top: 0px;
-			width: 0px;
-			height: 0px;
-			padding: 0px;
-			margin: 0px;
-			border: none;
-			visibility: hidden;
-		}
-		form {
-			padding: 0px;
-		}
-		#file + label {
-			display: block;
-			top: 0px;
-		}
-		#nowplaying {
-			display: block;
-			position: fixed;
-			left: 0px;
-			top: 0px;
-			width: 100%;
-			height: 24px;
-			font-size: 20px;
-			color: #282828;
-			background: #eee;
-			margin: 0px;
-			padding: 0px;
-			text-align: center;
-			vertical-align: middle;
-		}
-		#progress {
-			display: block;
-			-webkit-appearence: none;
-			-moz-appearence: none;
-			appearence: none;
-			background: #eee;
-			border: 0;
-			min-width: 100%;
-			height: 5px;
-			border: none;
-			outline: none;
-		}
-		#progress::-moz-focus-outer {
-			border: 0;
-		}
-		#progress::-ie-track {
-			background: none;
-		}
-		#progress::-moz-range-track {
-			background: none;
-		}
-		#progress::-webkit-slider-runnable-track {
-			background: none;
-		}
-		#progress::-moz-range-thumb {
-			width: 20px;
-			height: 20px;
-			background: #eee;
-			border-radius: 10px;
-			box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.5);
-			outline: none;
-			border: none;
-		}
-		#progress::-webkit-slider-thumb {
-			width: 20px;
-			height: 20px;
-			background: #eee;
-			border-radius: 10px;
-			box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.5);
-			outline: none;
-			border: none;
-		}
-	</style>
+    <style>
+        body {
+            background: #282828;
+        }
+        .time {
+            color: #eee;
+            text-align: center;
+            vertical-align: center;
+            padding-left: 40px;
+            padding-right: 40px;
+            font-size: 14px;
+        }
+        #songlist {
+            position: fixed;
+            left: 0px;
+            top: 24px;
+            width: 100%;
+            height: 80%;
+            overflow: hidden;
+            overflow-y: scroll;
+            list-style-type: none;
+            padding: 0px;
+            margin: 0px;
+        }
+        #songlist * {
+            display: block;
+            position: relative;
+            margin: 0px;
+            left: 0px;
+            top: 0px;
+            width: 100%;
+            font-size: 2.0em;
+            text-align: center;
+            background: #333;
+            color: #eee;
+            padding: 10px 0px 10px 0px;
+            border-bottom: solid 2px #282828;
+            cursor: pointer;
+            transition: background 0.01s;
+            -moz-transition: background 0.01s;
+            -webkit-transition: background 0.01s;
+        }
+        #songlist li:active {
+            background: #282828;
+        }
+        .noselect {
+            -webkit-touch-callout: none;
+            -webkit-user-select: none;
+            -moz-user-select: none;
+            -ms-user-select: none;
+            user-select: none;
+        }
+        #controlsinner {
+            display: flex;
+            flex-direction: row;
+            align-items: center;
+            width: 100%;
+            justify-content: space-between;
+        }
+        #controls {
+            display: flex;
+            flex-direction: column;
+            justify-content: space-evenly;
+            align-items: center;
+            position: fixed;
+            left: 0px;
+            bottom: -24px;
+            width: 100%;
+            height: 20%;
+        }
+        .icon {
+            width: 100%;
+            height: 100%;
+            color: white;
+        }
+        .control {
+            display: inline-block;
+            width: 24px;
+            height: 24px;
+            //border-radius: 4px;
+            border: solid 2px #eee;
+            background: #eee;
+            padding: 0px;
+            font-size: 14px;
+            font-family: Arial;
+            text-align: center;
+            vertical-align: middle;
+            transition: background 0.01s;
+            -moz-transition: background 0.01s;
+            -webkit-transition: background 0.01s;
+        }
+        .control:active {
+            background: #333;
+        }
+        #filecontainer {
+            display: flex;
+            width: 100%;
+            height: 100%;
+            align-items: baseline;
+            padding: 0px;
+            margin: 0px;
+        }
+        #file {
+            display: inline-block;
+            position: relative;
+            left: 0px;
+            top: 0px;
+            width: 0px;
+            height: 0px;
+            padding: 0px;
+            margin: 0px;
+            border: none;
+            visibility: hidden;
+        }
+        form {
+            padding: 0px;
+        }
+        #file + label {
+            display: block;
+            top: 0px;
+        }
+        #nowplaying {
+            display: block;
+            position: fixed;
+            left: 0px;
+            top: 0px;
+            width: 100%;
+            height: 24px;
+            font-size: 20px;
+            color: #282828;
+            background: #eee;
+            margin: 0px;
+            padding: 0px;
+            text-align: center;
+            vertical-align: middle;
+        }
+        #progress {
+            display: block;
+            -webkit-appearence: none;
+            -moz-appearence: none;
+            appearence: none;
+            background: #eee;
+            border: 0;
+            min-width: 100%;
+            height: 5px;
+            border: none;
+            outline: none;
+        }
+        #progress::-moz-focus-outer {
+            border: 0;
+        }
+        #progress::-ie-track {
+            background: none;
+        }
+        #progress::-moz-range-track {
+            background: none;
+        }
+        #progress::-webkit-slider-runnable-track {
+            background: none;
+        }
+        #progress::-moz-range-thumb {
+            width: 20px;
+            height: 20px;
+            background: #eee;
+            border-radius: 10px;
+            box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.5);
+            outline: none;
+            border: none;
+        }
+        #progress::-webkit-slider-thumb {
+            width: 20px;
+            height: 20px;
+            background: #eee;
+            border-radius: 10px;
+            box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.5);
+            outline: none;
+            border: none;
+        }
+    </style>
 
-	<script defer>
+    <script defer>
 
-		var duration = 0;
-		function playSong(e) {
-			duration = 0;
-			document.getElementById("nowplaying").innerHTML = 
-				"Now Playing: " + e.target.innerHTML;
-			let songpath = `converted/${e.target.getAttribute("data-songname")}`;
-			console.log(songpath);
-			let xhr = new XMLHttpRequest();
-			xhr.overrideMimeType("text/plain");
-			xhr.open("POST", "/playsong");
-			xhr.send(songpath);
-			getDuration((dur) => { duration = dur; });
-		}
-		
-		function upload() {
-			document.getElementById("fileform").submit();
-		}
+        var duration = 0;
+        function playSong(e) {
+            duration = 0;
+            document.getElementById("nowplaying").innerHTML = 
+                "Now Playing: " + e.target.innerHTML;
+            let songpath = `converted/${e.target.getAttribute("data-songname")}`;
+            console.log(songpath);
+            let xhr = new XMLHttpRequest();
+            xhr.overrideMimeType("text/plain");
+            xhr.open("POST", "/playsong");
+            xhr.send(songpath);
+            getDuration((dur) => { duration = dur; });
+        }
+        
+        function upload() {
+            document.getElementById("fileform").submit();
+        }
 
-		let seeking = false;
-		function seek(e) {
-			seeking = true;
-			if (duration <= 0) return;
-			let point = (document.getElementById("progress").value * duration) / 100;
-			
-			let xhr = new XMLHttpRequest();
-			xhr.overrideMimeType("text/plain");
-			xhr.open("POST", "/seek");
-			xhr.onload = () => {
-				seeking = false;
-			};
-			xhr.send(point.toString());
-			seeking = false;
-		}
-		function getDuration(cb) {
-			let xhr = new XMLHttpRequest();
-			xhr.overrideMimeType("text/plain");
-			xhr.open("POST", "/getduration");
-			xhr.onload = () => {
-				cb(parseFloat(xhr.response));
-			};
-			xhr.send();
-		}
-		function getElapsed(cb) {
-			let xhr = new XMLHttpRequest();
-			xhr.overrideMimeType("text/plain");
-			xhr.open("POST", "/getelapsed");
-			xhr.onload = () => {
-				cb(parseFloat(xhr.response));
-			};
-			xhr.send();
-		}
-		function pause() {
-			let xhr = new XMLHttpRequest();
-			xhr.open("POST", "/pause");
-			xhr.overrideMimeType("text/json");
-			xhr.send();
-		}
-		function resume() {
-			let xhr = new XMLHttpRequest();
-			xhr.open("POST", "/resume");
-			xhr.overrideMimeType("text/json");
-			xhr.send();
-		}
+        let seeking = false;
+        function seek(e) {
+            seeking = true;
+            if (duration <= 0) return;
+            let point = (document.getElementById("progress").value * duration) / 100;
+            
+            let xhr = new XMLHttpRequest();
+            xhr.overrideMimeType("text/plain");
+            xhr.open("POST", "/seek");
+            xhr.onload = () => {
+                seeking = false;
+            };
+            xhr.send(point.toString());
+            seeking = false;
+        }
+        function getDuration(cb) {
+            let xhr = new XMLHttpRequest();
+            xhr.overrideMimeType("text/plain");
+            xhr.open("POST", "/getduration");
+            xhr.onload = () => {
+                cb(parseFloat(xhr.response));
+            };
+            xhr.send();
+        }
+        function getElapsed(cb) {
+            let xhr = new XMLHttpRequest();
+            xhr.overrideMimeType("text/plain");
+            xhr.open("POST", "/getelapsed");
+            xhr.onload = () => {
+                cb(parseFloat(xhr.response));
+            };
+            xhr.send();
+        }
+        function pause() {
+            let xhr = new XMLHttpRequest();
+            xhr.open("POST", "/pause");
+            xhr.overrideMimeType("text/json");
+            xhr.send();
+        }
+        function resume() {
+            let xhr = new XMLHttpRequest();
+            xhr.open("POST", "/resume");
+            xhr.overrideMimeType("text/json");
+            xhr.send();
+        }
 
-		function updateSongList() {
-			let xhr = new XMLHttpRequest();
-			xhr.open("POST", "/getlist");
-			xhr.overrideMimeType("text/json");
-			xhr.onload = () => {
-				let songs = JSON.parse(xhr.response);
-				let songList = document.getElementById("songlist");
-				for (let song of songs) {
-					let entry = document.createElement("LI");
-					entry.classList.add("noselect");
-					entry.setAttribute("data-songname", song);
-					let dotsplit = song.split(".");
-					dotsplit.pop();
-					entry.innerHTML = dotsplit.join(".");
-					entry.onclick = playSong;
-					songlist.appendChild(entry);
-				}
-			}
-			xhr.send();
-		}
-		function getTimeString(secs) {
-			let min = Math.floor(secs / 60);
-			let sec = Math.floor(secs % 60);
-			return min + ":" + ("00" + sec).substr(-2);
-		}
+        function updateSongList() {
+            let xhr = new XMLHttpRequest();
+            xhr.open("POST", "/getlist");
+            xhr.overrideMimeType("text/json");
+            xhr.onload = () => {
+                let songs = JSON.parse(xhr.response);
+                let songList = document.getElementById("songlist");
+                for (let song of songs) {
+                    let entry = document.createElement("LI");
+                    entry.classList.add("noselect");
+                    entry.setAttribute("data-songname", song);
+                    let dotsplit = song.split(".");
+                    dotsplit.pop();
+                    entry.innerHTML = dotsplit.join(".");
+                    entry.onclick = playSong;
+                    songlist.appendChild(entry);
+                }
+            }
+            xhr.send();
+        }
+        function getTimeString(secs) {
+            let min = Math.floor(secs / 60);
+            let sec = Math.floor(secs % 60);
+            return min + ":" + ("00" + sec).substr(-2);
+        }
 
 
-		updateSongList();
-		getDuration((dur) => { duration = dur; });
+        updateSongList();
+        getDuration((dur) => { duration = dur; });
 
-		setInterval(() => {
-			getElapsed((timePoint) => {
-				document.getElementById("elapsed").innerHTML = getTimeString(timePoint);
-				document.getElementById("duration").innerHTML = getTimeString(duration);
-				if (seeking) return;
-				document.getElementById("progress").value = 100 * (timePoint / duration) || 0;
-			});
-		}, 32);
-	</script>
+        setInterval(() => {
+            getElapsed((timePoint) => {
+                document.getElementById("elapsed").innerHTML = getTimeString(timePoint);
+                document.getElementById("duration").innerHTML = getTimeString(duration);
+                if (seeking) return;
+                document.getElementById("progress").value = 100 * (timePoint / duration) || 0;
+            });
+        }, 32);
+    </script>
 </html>
