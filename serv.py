@@ -45,6 +45,7 @@ def get_duration(sock):
 def mime(path):
     if path.endswith(".js"): return "text/javascript"
     if path.endswith(".html"): return "text/html"
+    if path.endswith(".svg"): return "image/svg+xml"
     return ""
 
 def get_listing():
@@ -104,7 +105,7 @@ def application(env, start_response):
 
     if method == "GET":
         try:
-            with open(uri[1:], "r") as f:
+            with open(uri[1:], "rb") as f:
                 data = f.read()
             start_response("200 OK", [("Content-Type", mime(uri))]) 
             return data.encode("utf-8")

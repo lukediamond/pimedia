@@ -10,15 +10,19 @@
 		</ul>
 		<div id="controls">
 			<input onmousedown="seeking=true;" ontouchbegin="seeking=true;" onmouseup="seek(event)" ontouchend="seek(event)" id="progress" type="range" min="0" max="100" value="0"></input>
-			<div>
-				<button class="control" id="pause" onclick="pause()">Pause</button>
-				<button class="control" id="resume" onclick="resume()">Resume</button>
+			<div id="controlsinner">
+				<p id="elapsed" class="time"></p>
+				<div>
+					<button class="control" id="pause" onclick="pause()"><img class="icon" src="play.svg"></img></button>
+					<button class="control" id="resume" onclick="resume()"><img class="icon" src="pause.svg"></img></button>
 				<form id="fileform" class="control" method="POST" action="/upload" enctype="multipart/form-data">
 					<div id="formcontainer">
 						<input id="file" name="file" onchange="upload()" accept=".mp3,.wav,.ogg,.flac" type="file"></input>
-						<label for="file">Upload</label>
+						<label for="file"><img class="icon" src="upload.svg"></img></label>
 					</div>
 				</form>
+				</div>
+				<p id="duration" class="time"></p>
 			</div>
 		</div>
 	</body>
@@ -26,6 +30,14 @@
 	<style>
 		body {
 			background: #282828;
+		}
+		.time {
+			color: #eee;
+			text-align: center;
+			vertical-align: center;
+			padding-left: 40px;
+			padding-right: 40px;
+			font-size: 14px;
 		}
 		#songlist {
 			position: fixed;
@@ -46,7 +58,7 @@
 			left: 0px;
 			top: 0px;
 			width: 100%;
-			font-size: 2.5em;
+			font-size: 2.0em;
 			text-align: center;
 			background: #333;
 			color: #eee;
@@ -67,9 +79,17 @@
 			-ms-user-select: none;
 			user-select: none;
 		}
+		#controlsinner {
+			display: flex;
+			flex-direction: row;
+			align-items: center;
+			width: 100%;
+			justify-content: space-between;
+		}
 		#controls {
 			display: flex;
 			flex-direction: column;
+			justify-content: space-evenly;
 			align-items: center;
 			position: fixed;
 			left: 0px;
@@ -77,16 +97,19 @@
 			width: 100%;
 			height: 20%;
 		}
+		.icon {
+			width: 100%;
+			height: 100%;
+			color: white;
+		}
 		.control {
 			display: inline-block;
-			width: 64px;
-			height: 64px;
-			border-radius: 4px;
+			width: 24px;
+			height: 24px;
+			//border-radius: 4px;
 			border: solid 2px #eee;
-			background: #282828;
-			color: #eee;
+			background: #eee;
 			padding: 0px;
-			margin: 10px;
 			font-size: 14px;
 			font-family: Arial;
 			text-align: center;
@@ -118,15 +141,12 @@
 			border: none;
 			visibility: hidden;
 		}
+		form {
+			padding: 0px;
+		}
 		#file + label {
-			display: inline-block;
-			position: relative;
-			left: 0px;
+			display: block;
 			top: 0px;
-			width: 100%;
-			line-height: 100%;
-			text-align: center;
-			vertical-align: middle;
 		}
 		#nowplaying {
 			display: block;
@@ -150,7 +170,7 @@
 			appearence: none;
 			background: #eee;
 			border: 0;
-			width: 100%;
+			min-width: 100%;
 			height: 5px;
 			border: none;
 			outline: none;
@@ -273,11 +293,20 @@
 			}
 			xhr.send();
 		}
+		function getTimeString(secs) {
+			let min = Math.floor(secs / 60);
+			let sec = Math.floor(secs % 60);
+			return min + ":" + ("00" + sec).substr(-2);
+		}
+
+
 		updateSongList();
 		getDuration((dur) => { duration = dur; });
 
 		setInterval(() => {
 			getElapsed((timePoint) => {
+				document.getElementById("elapsed").innerHTML = getTimeString(timePoint);
+				document.getElementById("duration").innerHTML = getTimeString(duration);
 				if (seeking) return;
 				document.getElementById("progress").value = 100 * (timePoint / duration) || 0;
 			});
