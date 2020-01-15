@@ -7,9 +7,7 @@
     <body>
         <form id="fileform" class="control" method="POST" action="/upload" enctype="multipart/form-data">
             <input id="file" name="file" onchange="upload()" accept=".mp3,.wav,.ogg,.flac" type="file"></input>
-            <label for="file">
-                <img class="icon" src="upload.svg"></img>
-            </label>
+            <label for="file">Upload...</label>
         </form>
         <h3 id="nowplaying"></h3>
         <ul id="songlist">
@@ -19,12 +17,12 @@
             <div id="controlsinner">
                 <p id="elapsed" class="time"></p>
                 <div>
-                    <button class="control" id="pause" onclick="pause()"><img class="icon" src="pause.svg"></img></button>
-                    <button class="control" id="resume" onclick="resume()"><img class="icon" src="play.svg"></img></button>
+                    <button class="control" id="pause" onclick="pause()"><img class="icon" src="play.svg"></img></button>
+                    <button class="control" id="resume" onclick="resume()"><img class="icon" src="pause.svg"></img></button>
                 </div>
+                <div style="display: block; width: 100%; height: 0px;"></div>
                 <p id="duration" class="time"></p>
             </div>
-            <div></div>
         </div>
     </body>
 
@@ -85,7 +83,7 @@
             flex-direction: row;
             align-items: flex-start;
             width: 100%;
-            justify-content: space-between;
+            justify-content: space-evenly;
         }
         #controls {
             display: flex;
@@ -99,7 +97,7 @@
             height: 20%;
         }
         .icon {
-            width: 48px;
+            width: 8px;
             height: 48px;
             color: white;
             vertical-align: middle;
@@ -126,13 +124,14 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            top: 40px;
-            left: 16px;
+            top: 32px;
+            right: 32px;
+            width: 64;
+            height: 64px;
             padding: 10px;
             margin: 0px;
             z-index: 10;
             vertical-align: middle;
-            opacity: 0.4;
         }
         #file {
             width: 0px;
@@ -141,6 +140,14 @@
             margin: 0px;
             border: none;
             visibility: hidden;
+        }
+        #filecontainer + label {
+            display: block;
+            color: #eee;
+        }
+        form {
+            padding: 0px;
+            margin: 0px;
         }
         #nowplaying {
             display: block;
