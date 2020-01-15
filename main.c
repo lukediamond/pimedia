@@ -255,10 +255,14 @@ int main() {
                 lseek(ptargs.fd, sample * sizeof(int16_t), SEEK_SET);
                 /* change elapsed time to requested time */
                 played_elapsed = (uint64_t) (1000000 * mesg.timepoint);
+                
                 /* start thread if inactive and resume play */
                 if (!playthread_active)
                     playthread_start(&ptargs);
                 Mix_Resume(0);
+
+                /* halt channel to prevent waiting */
+                if (Mix_Playing(0) || Mix_Paused(0)) Mix_HaltChannel(0);
 
                 /* pause mix if it was playing before seeking */
                 if (waspaused) {
@@ -285,7 +289,7 @@ int main() {
             duration = (float) st.st_size / sizeof(int16_t) / SAMPLE_RATE;
             write(remote, &duration, 4);
         }
-        /* close remote connection */
+        /* close remote conn/send ction */
         close(remote);
     }
 
