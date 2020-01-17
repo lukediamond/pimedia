@@ -1,4 +1,3 @@
-
 // global variable holding duration of current clip in seconds
 var duration = 0;
 
