@@ -67,6 +67,7 @@ def get_duration(sock):
 # helper function to convert file extension to corresponding MIME type
 def mime(path):
     if path.endswith(".js"): return "text/javascript"
+    if path.endswith(".css"): return "text/css"
     if path.endswith(".html"): return "text/html"
     if path.endswith(".svg"): return "image/svg+xml"
     return ""
