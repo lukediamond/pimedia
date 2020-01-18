@@ -7,10 +7,11 @@
 * SDL2
 * nginx
 * UWSGI
+* ffmpeg
 
 To install, run:
 ```bash
-sudo apt install clang python3 libsdl2-dev libsdl2-mixer-dev uwsgi uwsgi-plugin-python nginx
+sudo apt install clang python3 libsdl2-dev libsdl2-mixer-dev uwsgi uwsgi-plugin-python nginx ffmpeg
 ```
 
 ### Building:
